@@ -2,60 +2,47 @@ from __future__ import annotations
 
 from typing import Any
 
-from backend.app.core.logging import get_logger
-from backend.app.services.investigation_service import InvestigationService
-from backend.app.workflows.executor import WorkflowExecutor
-
-logger = get_logger(__name__)
+from backend.app.repos.investigation_repo import InvestigationRepository
 
 
-class InvestigationWorkflowService:
-    """Orchestrates investigation execution and persistence.
+class InvestigationService:
+    """Service layer for investigation operations."""
 
-    This service coordinates between:
-    - API layer (receives requests)
-    - Workflow executor (runs investigation)
-    - Investigation service (persists results)
-    """
+    def __init__(self, repo: InvestigationRepository | None = None) -> None:
+        self.repo = repo or InvestigationRepository()
 
-    def __init__(self, investigation_service: InvestigationService | None = None) -> None:
-        self.investigation_service = investigation_service or InvestigationService()
-        self.executor = WorkflowExecutor()
-
-    async def start_investigation(self, title: str, input_text: str) -> dict[str, Any]:
-        """Create and start a new investigation.
-
-        Args:
-            title: Investigation title
-            input_text: Claim or input text to investigate
-
-        Returns:
-            Investigation record with ID and status
-        """
-        # Create investigation record
-        investigation = await self.investigation_service.create_investigation(
-            title=title,
-            input_text=input_text,
-        )
-
-        investigation_id = investigation.get("id", "placeholder")
-        logger.info(f"Investigation created: {investigation_id}")
-
-        # Execute workflow (placeholder - in production this would be async/queued)
-        try:
-            final_state = await self.executor.execute(
-                input_text=input_text,
-                investigation_id=investigation_id,
-            )
-            investigation["workflow_status"] = final_state.get("workflow_status")
-            investigation["final_verdict"] = final_state.get("final_verdict")
-        except Exception as e:
-            logger.error(f"Investigation failed: {e}")
-            investigation["workflow_status"] = "failed"
-
+    async def create_investigation(
+        self,
+        title: str,
+        input_text: str | None = None,
+        description: str | None = None,
+        source_type: str = "text",
+    ) -> dict[str, Any]:
+        payload = {
+            "title": title,
+            "description": description,
+            "input_text": input_text,
+            "source_type": source_type,
+            "status": "draft",
+        }
+        investigation = await self.repo.create(payload)
         return investigation
 
-    async def get_investigation_status(self, investigation_id: str) -> dict[str, Any]:
-        """Fetch the current status of an investigation."""
-        investigation = await self.investigation_service.get_investigation(investigation_id)
+    async def get_investigation(self, investigation_id: str) -> dict[str, Any] | None:
+        return await self.repo.get_by_id(investigation_id)
+
+    async def list_investigations(self, **filters: Any) -> list[dict[str, Any]]:
+        return await self.repo.list(**filters)
+
+    async def update_investigation_status(
+        self,
+        investigation_id: str,
+        status: str,
+        **updates: Any,
+    ) -> dict[str, Any] | None:
+        investigation = await self.get_investigation(investigation_id)
+        if not investigation:
+            return None
+        investigation["status"] = status
+        investigation.update(updates)
         return investigation
