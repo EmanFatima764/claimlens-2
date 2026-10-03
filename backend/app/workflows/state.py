@@ -82,6 +82,7 @@ class WorkflowState(TypedDict, total=False):
     independence_analysis: dict[str, Any]    # IndependenceAgent
     evidence_graph: dict[str, Any]
     final_verdict: Optional[Verdict]         # VerdictAgent
+    llm_error: Optional[str]                 # EvidenceAgent: why the LLM failed (shown in the report)
     llm_degraded: bool                       # EvidenceAgent: True if the LLM stance analysis failed
     workflow_status: str
     current_stage: str

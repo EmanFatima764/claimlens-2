@@ -14,7 +14,8 @@ HEADLINES = {
 
 
 def summarize_evidence(
-    evidence: list[dict[str, Any]], sources: list[dict[str, Any]], *, llm_degraded: bool = False
+    evidence: list[dict[str, Any]], sources: list[dict[str, Any]], *, llm_degraded: bool = False,
+    llm_error: str | None = None,
 ) -> dict[str, Any]:
     """Turn extracted evidence into a short 'most likely answer' (no extra agents, no extra API calls).
 
@@ -25,7 +26,8 @@ def summarize_evidence(
         return _verdict(
             "unverified", 0.0, 1.0, 0.0,
             "The AI evidence analysis was unavailable (API error or timeout), so sources are listed without a "
-            "judgement. Check the server logs and your LLM API key, then run the investigation again.",
+            "judgement. Check the server logs and your LLM API key, then run the investigation again."
+            + (f" Error: {llm_error}" if llm_error else ""),
         )
 
     quality = {s["id"]: clamp01(s.get("quality_score"), 0.5) for s in sources}

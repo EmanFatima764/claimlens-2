@@ -19,6 +19,11 @@ def fresh_memory_db(monkeypatch):
 @pytest.fixture(autouse=True)
 def fake_external_services(monkeypatch):
     async def fake_generate_json(self, prompt, *, system=None, temperature=0.1):
+        if "Evaluate each candidate pair" in prompt:
+            return {"pairs": [{"pair": 0, "is_conflict": True, "conflict_type": "numerical_discrepancy",
+                               "severity": 0.7, "explanation": "reuters.com and example.com report different figures."}]}
+        if "Final verdict synthesis" in prompt:
+            return {"label": "mixed", "explanation": "Sources disagree on the figures, so the claim is only partly supported."}
         if "Extract the distinct factual claims" in prompt:
             return {"claims": [
                 {"text": "The company has 50,000 active users", "normalized_text": "The company has 50,000 active users.",

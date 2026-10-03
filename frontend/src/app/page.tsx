@@ -7,11 +7,11 @@ const featureCards = [
   },
   {
     title: "Decision intelligence",
-    items: ["Credibility ranking", "Source-linked evidence", "Support vs. contradiction", "Most likely answer"],
+    items: ["Credibility ranking", "Source-linked evidence", "Conflict detection", "Confidence & uncertainty"],
   },
   {
     title: "Agentic workflow",
-    items: ["Claim Agent", "Research Agent", "Source Agent", "Evidence Agent"],
+    items: ["Claim, Research, Source", "Evidence Agent", "Conflict Agent", "Verdict Agent"],
   },
 ];
 
@@ -38,7 +38,7 @@ export default function HomePage() {
 
           <div className="stat-row">
             <div className="stat-card">
-              <strong>4</strong>
+              <strong>6</strong>
               <span>Specialist agents</span>
             </div>
             <div className="stat-card">

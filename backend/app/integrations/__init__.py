@@ -3,8 +3,7 @@
 __all__ = [
     "SupabaseClient",
     "TavilyClient",
-    "GeminiClient",
-    "AnthropicClient",
+    "GroqClient",
     "WhisperClient",
     "PDFClient",
 ]

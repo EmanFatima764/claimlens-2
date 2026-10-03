@@ -15,16 +15,24 @@ NODE_ORDER = [
     "research",
     "source_evaluation",
     "evidence_extraction",
+    "conflict_detection",
+    "verdict",
 ]
 
-# Maps pipeline nodes to the 4 stages shown in the frontend progress tracker.
+# Maps pipeline nodes to the stages shown in the frontend progress tracker.
 STAGE_GROUPS = {
     "claim_extraction": "claim",
     "research": "research",
     "source_evaluation": "sources",
     "evidence_extraction": "evidence",
+    "conflict_detection": "conflicts",
+    "verdict": "verdict",
     "done": "done",
 }
 
 VERDICT_LABELS = ["true", "mostly_true", "mixed", "mostly_false", "false", "unverified"]
 STANCES = ["supporting", "contradicting", "neutral"]
+CONFLICT_TYPES = {
+    "numerical_discrepancy", "temporal_discrepancy", "factual_contradiction",
+    "attribution_conflict", "scope_mismatch", "stance_conflict", "other",
+}
