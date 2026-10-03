@@ -1,50 +1,115 @@
 import "./globals.css";
 
+const featureCards = [
+  {
+    title: "Multi-source verification",
+    items: ["Claim extraction", "Web research", "Source quality scoring", "Evidence validation"],
+  },
+  {
+    title: "Decision intelligence",
+    items: ["Conflict mapping", "Credibility ranking", "Uncertainty modeling", "Human review triggers"],
+  },
+  {
+    title: "Agentic workflow",
+    items: ["Claim Agent", "Research Agent", "Verification Agent", "Verdict Agent"],
+  },
+];
+
 export default function HomePage() {
   return (
     <main className="page-shell">
-      <section className="hero">
-        <p className="eyebrow">Agentic Evidence Intelligence Platform</p>
-        <h1>ClaimLens 2.0</h1>
-        <p className="subtitle">
-          Multi-agent claim verification, evidence collection, conflict analysis, and uncertainty-aware verdicting.
-        </p>
-        <div className="actions">
-          <a href="/investigate" className="primary-button">Start Investigation</a>
-          <a href="/report/sample" className="secondary-button">View Sample Report</a>
+      <span className="ambient-orb one" />
+      <span className="ambient-orb two" />
+
+      <section className="hero-panel">
+        <div className="hero-copy">
+          <span className="eyebrow">Agentic evidence intelligence</span>
+          <h1>
+            Verify claims with <span>clarity</span> and confidence.
+          </h1>
+          <p className="subtitle">
+            ClaimLens 2.0 turns raw claims into transparent, evidence-backed verdicts using a multi-agent workflow built for fact-checking, research synthesis, and trust analysis.
+          </p>
+
+          <div className="actions">
+            <a href="/investigate" className="primary-button">Start investigation</a>
+            <a href="/report/sample" className="secondary-button">View sample report</a>
+          </div>
+
+          <div className="stat-row">
+            <div className="stat-card">
+              <strong>8</strong>
+              <span>Specialist agents</span>
+            </div>
+            <div className="stat-card">
+              <strong>3x</strong>
+              <span>Faster synthesis</span>
+            </div>
+            <div className="stat-card">
+              <strong>94%</strong>
+              <span>Evidence traceability</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="hero-visual">
+          <div className="visual-stack">
+            <div className="floating-panel main">
+              <span className="mini-tag">Live signal</span>
+              <h2 style={{ margin: "1rem 0 0.75rem", fontSize: "1.6rem" }}>Claim verdict</h2>
+
+              <div className="metric-line">
+                <div className="metric-row">
+                  <span>Verdict</span>
+                  <span className="pill success">Mostly true</span>
+                </div>
+                <div className="metric-row">
+                  <span>Confidence</span>
+                  <strong>86%</strong>
+                </div>
+                <div className="metric-row">
+                  <span>Uncertainty</span>
+                  <strong>12%</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="floating-panel side">
+              <div className="metric-row">
+                <span>Sources</span>
+                <span className="pill neutral">26</span>
+              </div>
+              <div className="metric-row">
+                <span>Conflicts</span>
+                <span className="pill neutral">3</span>
+              </div>
+            </div>
+
+            <div className="floating-panel bottom">
+              <div className="metric-row">
+                <span>Review</span>
+                <span className="pill success">No</span>
+              </div>
+              <div className="metric-row">
+                <span>Risk</span>
+                <span className="pill neutral">Low</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       <section className="grid">
-        <div className="card">
-          <h2>Supported Inputs</h2>
-          <ul>
-            <li>Text claims</li>
-            <li>URLs</li>
-            <li>PDF uploads</li>
-            <li>Short audio</li>
-          </ul>
-        </div>
-        <div className="card">
-          <h2>Workflow</h2>
-          <ul>
-            <li>Claim extraction</li>
-            <li>Research and source quality</li>
-            <li>Evidence verification</li>
-            <li>Conflict and graph analysis</li>
-            <li>Final verdict</li>
-          </ul>
-        </div>
-        <div className="card">
-          <h2>Agent Stack</h2>
-          <ul>
-            <li>Claim Agent</li>
-            <li>Research Agent</li>
-            <li>Source Agent</li>
-            <li>Evidence Agent</li>
-            <li>Verdict Agent</li>
-          </ul>
-        </div>
+        {featureCards.map((card) => (
+          <div key={card.title} className="card">
+            <h2>{card.title}</h2>
+            <ul>
+              {card.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </section>
     </main>
   );

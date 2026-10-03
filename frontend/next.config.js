@@ -1,8 +1,8 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  reactStrictMode: true,
-  output: "standalone",
+/** @type {import('next').NextConfig} */
+module.exports = {
+	reactStrictMode: true,
+	webpack: (config, { dev }) => {
+		if (dev) config.cache = false;
+		return config;
+	},
 };
-
-export default nextConfig;
