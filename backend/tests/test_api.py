@@ -35,6 +35,9 @@ def test_full_pipeline_and_report():
     assert {"supporting", "contradicting"} <= {e["stance"] for e in report["evidence"]}
     assert report["evidence"][0]["source_url"]
     assert report["verdict"]["label"] and 0 <= report["verdict"]["confidence"] <= 1
+    assert report["conflicts"], "ConflictAgent output should reach the report"
+    assert report["conflicts"][0]["conflict_type"] == "numerical_discrepancy"
+    assert report["verdict"]["explanation"]
 
 
 def test_frontend_field_aliases():

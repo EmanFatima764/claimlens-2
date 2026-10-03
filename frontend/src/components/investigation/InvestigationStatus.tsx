@@ -17,6 +17,8 @@ const STAGES: Array<{ key: Exclude<StageGroup, "done">; title: string; hint: str
   { key: "research", title: "Research", hint: "Search the web" },
   { key: "sources", title: "Sources", hint: "Score credibility" },
   { key: "evidence", title: "Evidence", hint: "Read what sources say" },
+  { key: "conflicts", title: "Conflicts", hint: "Spot contradictions" },
+  { key: "verdict", title: "Verdict", hint: "Weigh it all up" },
 ];
 
 const STATUS_COLORS: Record<Investigation["status"], string> = {

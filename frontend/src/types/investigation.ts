@@ -1,7 +1,7 @@
 export type InvestigationStatus = "draft" | "queued" | "running" | "completed" | "failed";
 
-/** The 4 agent stages shown in the progress tracker (one per agent). */
-export type StageGroup = "claim" | "research" | "sources" | "evidence" | "done";
+/** The agent stages shown in the progress tracker (one per agent). */
+export type StageGroup = "claim" | "research" | "sources" | "evidence" | "conflicts" | "verdict" | "done";
 
 export interface Investigation {
   id: string;

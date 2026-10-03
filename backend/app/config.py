@@ -13,7 +13,8 @@ load_dotenv()
 
 
 def _env(name: str, default: str = "") -> str:
-    return os.getenv(name, default)
+    # An empty value (e.g. a blank "GROQ_MODEL=" line in .env) counts as "not set".
+    return os.getenv(name) or default
 
 
 class Settings(BaseModel):
@@ -28,11 +29,8 @@ class Settings(BaseModel):
     supabase_anon_key: str = Field(default_factory=lambda: _env("SUPABASE_ANON_KEY"))
     supabase_service_role_key: str = Field(default_factory=lambda: _env("SUPABASE_SERVICE_ROLE_KEY"))
 
-    llm_provider: str = Field(default_factory=lambda: _env("LLM_PROVIDER", "gemini").lower())
-    gemini_api_key: str = Field(default_factory=lambda: _env("GEMINI_API_KEY"))
-    gemini_model: str = Field(default_factory=lambda: _env("GEMINI_MODEL", "gemini-2.5-flash"))
-    anthropic_api_key: str = Field(default_factory=lambda: _env("ANTHROPIC_API_KEY"))
-    anthropic_model: str = Field(default_factory=lambda: _env("ANTHROPIC_MODEL", "claude-sonnet-5-5"))
+    groq_api_key: str = Field(default_factory=lambda: _env("GROQ_API_KEY"))
+    groq_model: str = Field(default_factory=lambda: _env("GROQ_MODEL", "openai/gpt-oss-120b"))
     tavily_api_key: str = Field(default_factory=lambda: _env("TAVILY_API_KEY"))
 
     cors_origins: List[str] = Field(

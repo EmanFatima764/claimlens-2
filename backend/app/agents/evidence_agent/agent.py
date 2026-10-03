@@ -68,6 +68,7 @@ class EvidenceAgent(BaseAgent):
         self.evidence_repo = evidence_repo or EvidenceRepository()
         self.sources_per_claim = sources_per_claim
         self.concurrency = concurrency
+        self.last_error: str | None = None
 
     async def run(self, state: dict[str, Any]) -> dict[str, Any]:
         sources = state.get("evaluated_sources", [])
@@ -78,7 +79,7 @@ class EvidenceAgent(BaseAgent):
         evidence = [e for items, _ in results for e in items]
         degraded = any(failed for _, failed in results)
         logger.info("Extracted %d evidence items (llm_degraded=%s)", len(evidence), degraded)
-        return {"extracted_evidence": evidence, "llm_degraded": degraded}
+        return {"extracted_evidence": evidence, "llm_degraded": degraded, "llm_error": self.last_error if degraded else None}
 
     async def _ask_llm(self, claim_text: str, listing: str) -> Any:
         """Call the LLM, retrying once on a bad/invalid reply. Raises ClaimLensError if both attempts fail."""
@@ -111,6 +112,7 @@ class EvidenceAgent(BaseAgent):
                 data = await self._ask_llm(claim_text, listing)
             except ClaimLensError as exc:
                 logger.error("Evidence extraction FAILED for claim %s: %s", claim["id"], exc.message)
+                self.last_error = truncate(f"{exc.code}: {exc.message}", 250)
                 return await self._fallback_evidence(investigation_id, claim, linked), True
 
         out: list[dict[str, Any]] = []

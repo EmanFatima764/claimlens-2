@@ -63,13 +63,14 @@ class InvestigationWorkflowService:
                 investigation_id=investigation_id,
                 on_stage=on_stage,
             )
-            # Most likely answer, derived from the evidence the 4 agents just collected.
-            answer = summarize_evidence(
-                final.get("extracted_evidence", []), final.get("evaluated_sources", []),
-                llm_degraded=bool(final.get("llm_degraded")),
-            )
-            await VerdictRepository().save_for_investigation({"investigation_id": investigation_id, **answer})
-            final["final_verdict"] = answer
+            # The VerdictAgent already saved the verdict; only fall back if it somehow returned nothing.
+            if not final.get("final_verdict"):
+                answer = summarize_evidence(
+                    final.get("extracted_evidence", []), final.get("evaluated_sources", []),
+                    llm_degraded=bool(final.get("llm_degraded")),
+                )
+                await VerdictRepository().save_for_investigation({"investigation_id": investigation_id, **answer})
+                final["final_verdict"] = answer
             await svc.update_investigation_status(
                 investigation_id, STATUS_COMPLETED, workflow_status="completed",
                 final_verdict=final.get("final_verdict"), current_stage="done",

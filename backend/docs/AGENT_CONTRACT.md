@@ -19,7 +19,10 @@ Every agent lives in `app/agents/<name>_agent/agent.py`, subclasses `BaseAgent`,
 | 7 IndependenceAgent | sources | independence_analysis | - |
 | 8 VerdictAgent | everything | final_verdict | verdicts (VerdictRepository.save_for_investigation) |
 
-Agents 5-8 are currently PLACEHOLDERS (VerdictAgent has a simple weighted-vote heuristic so the report page works).
+Agents 1-4, 6 (ConflictAgent) and 8 (VerdictAgent) are implemented and wired into the graph. Agents 5 (Verification) and 7 (Independence) are still PLACEHOLDERS and are not wired in.
+
+ConflictAgent: pairs supporting vs contradicting evidence per claim, asks the LLM whether each pair is a real conflict, persists to `conflicts`.
+VerdictAgent: label baseline + confidence/uncertainty are computed in code; the LLM may move the label at most one step and writes the explanation. Falls back to the computed baseline if the LLM fails.
 
 ## Rules
 - Every item you persist must have its DB `id` put back into state (later agents and the report use it).

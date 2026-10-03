@@ -30,7 +30,14 @@ export default function ReportSummary({ report }: ReportSummaryProps) {
         </div>
         <p style={{ color: "#e2e8f0", fontSize: 15, lineHeight: 1.7, margin: 0 }}>{report.summary}</p>
         {verdict.label !== "unverified" && (
-          <div style={{ color: "#94a3b8", fontSize: 12 }}>Confidence: {(verdict.confidence * 100).toFixed(0)}%</div>
+          <div style={{ color: "#94a3b8", fontSize: 12 }}>
+            Confidence: {(verdict.confidence * 100).toFixed(0)}% · Uncertainty: {(verdict.uncertainty * 100).toFixed(0)}%
+          </div>
+        )}
+        {verdict.reviewRequired && (
+          <div style={{ color: "#fbbf24", fontSize: 12, fontWeight: 600 }}>
+            ⚠ Human review recommended — the evidence is thin, mixed, or in conflict.
+          </div>
         )}
       </div>
     </div>

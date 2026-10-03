@@ -93,3 +93,19 @@ async def test_evidence_agent_flags_llm_failure(monkeypatch):
     s = await EvidenceAgent().execute(s)
     assert s["llm_degraded"] is True
     assert all(e["stance"] == "neutral" for e in s["extracted_evidence"])  # no guessed stances
+
+
+async def test_evidence_agent_records_why_llm_failed(monkeypatch):
+    from backend.app.core.exceptions import ClaimLensError
+    from backend.app.integrations.llm import LLMClient
+
+    s = await ClaimAgent().execute(base_state())
+    s = await ResearchAgent().execute(s)
+    s = await SourceAgent().execute(s)
+
+    async def boom(self, *a, **k):
+        raise ClaimLensError("groq HTTP 401: invalid api key", code="groq_http_401")
+
+    monkeypatch.setattr(LLMClient, "generate_json", boom)
+    s = await EvidenceAgent().execute(s)
+    assert "groq_http_401" in s["llm_error"]

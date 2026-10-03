@@ -3,6 +3,7 @@ import { getMockReport, getReport } from "@/lib/report";
 import ReportSummary from "@/components/report/ReportSummary";
 import EvidenceCard from "@/components/report/EvidenceCard";
 import SourceList from "@/components/report/SourceList";
+import ConflictList from "@/components/report/ConflictList";
 import ReportChat from "@/components/report/ReportChat";
 
 // Always render with fresh data from the backend.
@@ -86,6 +87,10 @@ export default async function ReportPage({ params }: { params: Params | Promise<
         </section>
 
         <aside className="evidence-stack" style={{ gap: "1.5rem" }}>
+          <div>
+            <h3 style={{ margin: "0 0 12px" }}>Conflicts</h3>
+            <ConflictList conflicts={report.conflicts} />
+          </div>
           <div>
             <h3 style={{ margin: "0 0 12px" }}>Sources</h3>
             <SourceList sources={report.sources} />
