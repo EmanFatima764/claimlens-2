@@ -4,27 +4,29 @@ import ReportSummary from "@/components/report/ReportSummary";
 import EvidenceCard from "@/components/report/EvidenceCard";
 import SourceList from "@/components/report/SourceList";
 import ConflictList from "@/components/report/ConflictList";
+import ReportChat from "@/components/report/ReportChat";
 
 export default function ReportPage({ params }: { params: { id: string } }) {
   const report: ReportData = getMockReport(params.id);
 
   return (
-    <main style={{ maxWidth: 1280, margin: "0 auto", padding: "2rem 1.5rem", color: "#e2e8f0" }}>
-      <div style={{ marginBottom: 24 }}>
-        <a href="/investigate" style={{ color: "#7dd3fc", textDecoration: "none" }}>← Back to investigation</a>
+    <main className="report-shell">
+      <div className="report-topbar">
+        <a href="/investigate" className="secondary-button" style={{ width: "fit-content" }}>← Back to investigation</a>
+        <span className="report-badge">Case #{report.id}</span>
       </div>
 
       <ReportSummary report={report} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 24, marginTop: 24 }}>
+      <div className="report-layout" style={{ marginTop: "1.4rem" }}>
         <section>
-          <h3 style={{ margin: "0 0 12px", color: "#e2e8f0" }}>Claim</h3>
-          <div style={{ background: "rgba(15,23,42,0.7)", border: "1px solid rgba(148,163,184,0.2)", borderRadius: 12, padding: 16 }}>
-            <p style={{ margin: 0, lineHeight: 1.8, color: "#e2e8f0" }}>{report.claimText}</p>
+          <h3 style={{ margin: "0 0 12px" }}>Claim</h3>
+          <div className="glass-section claim-panel">
+            <p style={{ margin: 0 }}>{report.claimText}</p>
           </div>
 
-          <h3 style={{ margin: "24px 0 12px", color: "#e2e8f0" }}>Evidence</h3>
-          <div style={{ display: "grid", gap: 16 }}>
+          <h3 style={{ margin: "1.5rem 0 12px" }}>Evidence</h3>
+          <div className="evidence-stack">
             {report.evidence.map((item) => (
               <EvidenceCard
                 key={item.id}
@@ -35,38 +37,33 @@ export default function ReportPage({ params }: { params: { id: string } }) {
           </div>
         </section>
 
-        <aside style={{ display: "grid", gap: 24 }}>
+        <aside className="evidence-stack" style={{ gap: "1.5rem" }}>
           <div>
-            <h3 style={{ margin: "0 0 12px", color: "#e2e8f0" }}>Sources</h3>
+            <h3 style={{ margin: "0 0 12px" }}>Sources</h3>
             <SourceList sources={report.sources} />
           </div>
 
           <div>
-            <h3 style={{ margin: "0 0 12px", color: "#e2e8f0" }}>Conflicts</h3>
+            <h3 style={{ margin: "0 0 12px" }}>Conflicts</h3>
             <ConflictList conflicts={report.conflicts} />
           </div>
         </aside>
       </div>
 
-      <section style={{ marginTop: 32 }}>
-        <h3 style={{ margin: "0 0 12px", color: "#e2e8f0" }}>Evidence Graph</h3>
-        <div style={{ position: "relative", height: 360, background: "rgba(15,23,42,0.7)", borderRadius: 16, border: "1px solid rgba(148,163,184,0.2)", overflow: "hidden" }}>
+      <section style={{ marginTop: "2rem" }}>
+        <h3 style={{ margin: "0 0 12px" }}>Evidence graph</h3>
+        <div className="graph-panel">
           {report.graph.nodes.map((node) => (
             <div
               key={node.id}
+              className="graph-node"
               style={{
-                position: "absolute",
                 left: node.x,
                 top: node.y,
-                transform: "translate(-50%, -50%)",
-                minWidth: 110,
-                background: node.type === "claim" ? "#3b82f6" : node.type === "source" ? "#10b981" : "#f59e0b",
-                color: "white",
-                borderRadius: 999,
-                padding: "8px 12px",
-                fontSize: 12,
-                fontWeight: 700,
-                boxShadow: "0 4px 12px rgba(15,23,42,0.25)",
+                background:
+                  node.type === "claim" ? "linear-gradient(135deg,#4f7cff,#62d7ff)" :
+                  node.type === "source" ? "linear-gradient(135deg,#1ec58b,#73f0c1)" :
+                  "linear-gradient(135deg,#ffb454,#ffc777)",
               }}
             >
               {node.label}
@@ -91,16 +88,17 @@ export default function ReportPage({ params }: { params: { id: string } }) {
                   top: Math.min(y1, y2),
                   width: Math.abs(x2 - x1),
                   height: Math.abs(y2 - y1),
-                  borderTop: "2px dashed rgba(125, 211, 252, 0.7)",
-                  transform: x2 < x1 ? "skewY(0deg)" : "none",
+                  borderTop: "2px dashed rgba(98, 215, 255, 0.8)",
                 }}
               >
-                <span style={{ position: "absolute", left: 8, top: -18, color: "#7dd3fc", fontSize: 11 }}>{edge.label}</span>
+                <span style={{ position: "absolute", left: 8, top: -18, color: "#bfeaff", fontSize: 11 }}>{edge.label}</span>
               </div>
             );
           })}
         </div>
       </section>
+
+      <ReportChat report={report} />
     </main>
   );
 }
