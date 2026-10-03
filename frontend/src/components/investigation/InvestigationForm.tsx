@@ -11,9 +11,7 @@ interface InvestigationFormProps {
 export default function InvestigationForm({
   onInvestigationCreated,
 }: InvestigationFormProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [sourceType, setSourceType] = useState<"text" | "url" | "pdf" | "audio">("text");
+  const [claim, setClaim] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,20 +21,18 @@ export default function InvestigationForm({
     setIsLoading(true);
 
     try {
+      const text = claim.trim();
       const investigation = await createInvestigation({
-        title,
-        description,
-        source_type: sourceType,
+        title: text.replace(/\s+/g, " ").slice(0, 80),
+        input_text: text,
+        source_type: "text",
       });
 
       if (onInvestigationCreated) {
         onInvestigationCreated(investigation);
       }
 
-      // Clear form
-      setTitle("");
-      setDescription("");
-      setSourceType("text");
+      setClaim("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create investigation");
     } finally {
@@ -47,50 +43,22 @@ export default function InvestigationForm({
   return (
     <form onSubmit={handleSubmit} className="investigation-form">
       <div className="form-group">
-        <label htmlFor="title">Investigation Title</label>
-        <input
-          id="title"
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g., Verify startup metrics claim"
-          required
-          disabled={isLoading}
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="description">Claim or Input Text</label>
+        <label htmlFor="claim">Claim to check</label>
         <textarea
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Paste the claim you want to fact-check..."
-          rows={8}
+          id="claim"
+          value={claim}
+          onChange={(e) => setClaim(e.target.value)}
+          placeholder="e.g., Donald Trump is the president of the USA"
+          rows={5}
           required
           disabled={isLoading}
         />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="sourceType">Input Type</label>
-        <select
-          id="sourceType"
-          value={sourceType}
-          onChange={(e) => setSourceType(e.target.value as any)}
-          disabled={isLoading}
-        >
-          <option value="text">Text</option>
-          <option value="url">URL</option>
-          <option value="pdf">PDF</option>
-          <option value="audio">Audio</option>
-        </select>
       </div>
 
       {error && <div className="error-message">{error}</div>}
 
       <button type="submit" disabled={isLoading} className="submit-button">
-        {isLoading ? "Starting Investigation..." : "Start Investigation"}
+        {isLoading ? "Starting..." : "Check this claim"}
       </button>
     </form>
   );

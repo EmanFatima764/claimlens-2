@@ -19,7 +19,8 @@ export default function EvidenceCard({ evidence, source }: EvidenceCardProps) {
       <p style={{ color: "#e2e8f0", lineHeight: 1.7, margin: 0 }}>{evidence.text}</p>
       {source && (
         <div style={{ marginTop: 12, color: "#cbd5e1", fontSize: 12 }}>
-          <strong>Source:</strong> {source.title} · {source.publisher}
+          <strong>Source:</strong>{" "}
+          {source.url ? <a href={source.url} target="_blank" rel="noreferrer" style={{ color: "#7dd3fc" }}>{source.title}</a> : source.title} · {source.publisher}
         </div>
       )}
     </div>

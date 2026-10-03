@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { ReportData } from "@/types/report";
+import { API_BASE_URL } from "@/lib/api";
 
 export const runtime = "nodejs";
 
@@ -49,6 +50,23 @@ function fallbackAnswer(report: ReportData, question: string): string {
   );
 }
 
+/** Ask the ClaimLens backend (uses its own LLM key) - used when Groq is not configured or fails. */
+async function askBackend(report: ReportData, question: string): Promise<string | null> {
+  if (!report.id || report.id === "sample") return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/reports/${encodeURIComponent(report.id)}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: question.slice(0, 500) }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data?.answer === "string" && data.answer.trim() ? data.answer.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: Request) {
   let body: { report?: ReportData; messages?: Msg[] };
   try {
@@ -72,6 +90,8 @@ export async function POST(req: Request) {
   const model = process.env.GROQ_MODEL?.trim() || DEFAULT_GROQ_MODEL;
 
   if (!apiKey) {
+    const fromBackend = await askBackend(report, lastQuestion);
+    if (fromBackend) return NextResponse.json({ answer: fromBackend });
     return NextResponse.json({ answer: fallbackAnswer(report, lastQuestion), mock: true });
   }
 
@@ -93,6 +113,9 @@ export async function POST(req: Request) {
     if (!res.ok) {
       const detail = await res.text();
       console.error("Groq error", res.status, detail.slice(0, 300));
+
+      const fromBackend = await askBackend(report, lastQuestion);
+      if (fromBackend) return NextResponse.json({ answer: fromBackend });
 
       return NextResponse.json({
         answer: fallbackAnswer(report, lastQuestion),

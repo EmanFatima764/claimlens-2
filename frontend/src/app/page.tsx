@@ -7,11 +7,11 @@ const featureCards = [
   },
   {
     title: "Decision intelligence",
-    items: ["Conflict mapping", "Credibility ranking", "Uncertainty modeling", "Human review triggers"],
+    items: ["Credibility ranking", "Source-linked evidence", "Support vs. contradiction", "Most likely answer"],
   },
   {
     title: "Agentic workflow",
-    items: ["Claim Agent", "Research Agent", "Verification Agent", "Verdict Agent"],
+    items: ["Claim Agent", "Research Agent", "Source Agent", "Evidence Agent"],
   },
 ];
 
@@ -28,7 +28,7 @@ export default function HomePage() {
             Verify claims with <span>clarity</span> and confidence.
           </h1>
           <p className="subtitle">
-            ClaimLens 2.0 turns raw claims into transparent, evidence-backed verdicts using a multi-agent workflow built for fact-checking, research synthesis, and trust analysis.
+            ClaimLens 2.0 turns raw claims into transparent, source-linked evidence and a most likely answer using a multi-agent workflow built for fact-checking, research synthesis, and trust analysis.
           </p>
 
           <div className="actions">
@@ -38,16 +38,16 @@ export default function HomePage() {
 
           <div className="stat-row">
             <div className="stat-card">
-              <strong>8</strong>
+              <strong>4</strong>
               <span>Specialist agents</span>
             </div>
             <div className="stat-card">
-              <strong>3x</strong>
-              <span>Faster synthesis</span>
+              <strong>Live</strong>
+              <span>Web research</span>
             </div>
             <div className="stat-card">
-              <strong>94%</strong>
-              <span>Evidence traceability</span>
+              <strong>Every</strong>
+              <span>claim source-linked</span>
             </div>
           </div>
         </div>

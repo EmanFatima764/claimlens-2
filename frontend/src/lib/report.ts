@@ -1,4 +1,12 @@
-import type { EvidenceRecord, SourceRecord } from "@/types/report";
+import type {
+  ConflictRecord,
+  EvidenceRecord,
+  EvidenceType,
+  ReportData,
+  SourceRecord,
+  VerdictLabel,
+} from "@/types/report";
+import { API_BASE_URL } from "@/lib/api";
 
 export function formatScore(value: number): string {
   return `${(value * 100).toFixed(0)}%`;
@@ -144,4 +152,178 @@ export function getMockReport(reportId: string): {
       ],
     },
   };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Real report: GET /api/v1/reports/{id}  ->  ReportData             */
+/* ------------------------------------------------------------------ */
+
+interface ApiReport {
+  investigation: { id: string; title?: string; status?: string; input_text?: string };
+  claims: Array<{ id: string; text: string }>;
+  sources: Array<{
+    id: string;
+    title?: string;
+    url?: string;
+    publisher?: string;
+    domain?: string;
+    source_type?: string;
+    quality_score?: number;
+    relevance_score?: number;
+  }>;
+  evidence: Array<{
+    id: string;
+    claim_id?: string;
+    source_id?: string;
+    evidence_text: string;
+    stance?: string;
+    relevance_score?: number;
+    confidence?: number;
+  }>;
+  conflicts: Array<{
+    id: string;
+    evidence_a_id?: string;
+    evidence_b_id?: string;
+    conflict_type?: string;
+    severity?: number;
+    explanation?: string;
+  }>;
+  verdict: {
+    label?: string;
+    explanation?: string;
+    confidence?: number;
+    uncertainty?: number;
+    review_required?: boolean;
+  } | null;
+}
+
+const num = (v: unknown, fallback = 0) => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
+const VERDICT_LABELS: VerdictLabel[] = ["true", "mostly_true", "mixed", "mostly_false", "false", "unverified"];
+
+export function formatVerdictLabel(label: string): string {
+  return label.replace(/_/g, " ");
+}
+
+/** Fetch a finished (or in-progress) report from the backend. Returns null if it does not exist. */
+export async function getReport(id: string): Promise<ReportData | null> {
+  const res = await fetch(`${API_BASE_URL}/api/v1/reports/${encodeURIComponent(id)}`, { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Report request failed (${res.status})`);
+  return adaptReport((await res.json()) as ApiReport);
+}
+
+/**
+ * Maps the backend payload to the shape the report components use.
+ * Database uuids are replaced with short display ids (src-1, ev-1, conf-1, claim-1) because the
+ * chat assistant cites items by those ids and ReportChat highlights them.
+ */
+export function adaptReport(api: ApiReport): ReportData {
+  const claimIds = new Map(api.claims.map((c, i) => [c.id, `claim-${i + 1}`]));
+  const srcIds = new Map(api.sources.map((s, i) => [s.id, `src-${i + 1}`]));
+  const evIds = new Map(api.evidence.map((e, i) => [e.id, `ev-${i + 1}`]));
+
+  const sources: SourceRecord[] = api.sources.map((s) => ({
+    id: srcIds.get(s.id)!,
+    title: s.title || s.domain || s.url || "Untitled source",
+    url: s.url ?? "",
+    publisher: s.publisher || s.domain || "Unknown",
+    sourceType: s.source_type || "other",
+    qualityScore: num(s.quality_score, 0.5),
+    relevanceScore: num(s.relevance_score, 0.5),
+  }));
+
+  const evidence: EvidenceRecord[] = api.evidence.map((e) => ({
+    id: evIds.get(e.id)!,
+    claimId: claimIds.get(e.claim_id ?? "") ?? "",
+    sourceId: srcIds.get(e.source_id ?? "") ?? "",
+    text: e.evidence_text,
+    type: (["supporting", "contradicting", "neutral"].includes(e.stance ?? "") ? e.stance : "neutral") as EvidenceType,
+    relevanceScore: num(e.relevance_score, 0.5),
+    confidence: num(e.confidence, 0.5),
+  }));
+
+  const conflicts: ConflictRecord[] = api.conflicts.map((c, i) => ({
+    id: `conf-${i + 1}`,
+    evidenceAId: evIds.get(c.evidence_a_id ?? "") ?? "",
+    evidenceBId: evIds.get(c.evidence_b_id ?? "") ?? "",
+    type: c.conflict_type || "conflict",
+    severity: num(c.severity, 0.5),
+    explanation: c.explanation || "",
+  }));
+
+  const v = api.verdict;
+  const label = (VERDICT_LABELS.includes(v?.label as VerdictLabel) ? v?.label : "unverified") as VerdictLabel;
+  const status = api.investigation.status;
+
+  return {
+    id: api.investigation.id,
+    title: api.investigation.title || "Investigation",
+    status: status === "completed" || status === "failed" ? status : "running",
+    claimText: api.claims.length
+      ? api.claims.map((c) => c.text).join(" • ")
+      : api.investigation.input_text || "",
+    summary: v?.explanation || (v ? "" : "This investigation is still running. Refresh in a moment."),
+    verdict: {
+      label,
+      confidence: num(v?.confidence),
+      uncertainty: num(v?.uncertainty, 1),
+      explanation: v?.explanation || "",
+      reviewRequired: v?.review_required ?? true,
+    },
+    sources,
+    evidence,
+    conflicts,
+    graph: buildGraph(api, claimIds, srcIds, evIds),
+  };
+}
+
+function buildGraph(
+  api: ApiReport,
+  claimIds: Map<string, string>,
+  srcIds: Map<string, string>,
+  evIds: Map<string, string>
+): ReportData["graph"] {
+  const ROW = 62;
+  const claims = api.claims.slice(0, 3);
+  const sources = api.sources.slice(0, 5);
+  const shownSrc = new Set(sources.map((s) => s.id));
+  const evidence = api.evidence.filter((e) => e.source_id && shownSrc.has(e.source_id)).slice(0, 5);
+
+  const nodes: ReportData["graph"]["nodes"] = [
+    ...claims.map((c, i) => ({ id: claimIds.get(c.id)!, label: `Claim ${i + 1}`, type: "claim", x: 90, y: 40 + i * 95 })),
+    ...sources.map((s, i) => ({
+      id: srcIds.get(s.id)!,
+      label: (s.publisher || s.domain || "Source").slice(0, 18),
+      type: "source",
+      x: 320,
+      y: 30 + i * ROW,
+    })),
+    ...evidence.map((e, i) => ({
+      id: evIds.get(e.id)!,
+      label: e.stance === "supporting" ? "Support" : e.stance === "contradicting" ? "Conflict" : "Context",
+      type: "evidence",
+      x: 540,
+      y: 30 + i * ROW,
+    })),
+  ];
+
+  const edges: ReportData["graph"]["edges"] = [];
+  const seen = new Set<string>();
+  for (const e of evidence) {
+    const claimNode = claimIds.get(e.claim_id ?? "");
+    const srcNode = srcIds.get(e.source_id ?? "");
+    const evNode = evIds.get(e.id);
+    if (!srcNode || !evNode) continue;
+    const key = `${claimNode}>${srcNode}`;
+    if (claimNode && nodes.some((n) => n.id === claimNode) && !seen.has(key)) {
+      seen.add(key);
+      edges.push({
+        source: claimNode,
+        target: srcNode,
+        label: e.stance === "supporting" ? "supports" : e.stance === "contradicting" ? "contradicts" : "mentions",
+      });
+    }
+    edges.push({ source: srcNode, target: evNode, label: "evidence" });
+  }
+  return { nodes, edges };
 }
