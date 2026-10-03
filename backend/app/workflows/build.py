@@ -1,16 +1,9 @@
 from __future__ import annotations
 
-import json
-from typing import Any
-
 from backend.app.agents.claim_agent.agent import ClaimAgent
-from backend.app.agents.conflict_agent.agent import ConflictAgent
 from backend.app.agents.evidence_agent.agent import EvidenceAgent
-from backend.app.agents.independence_agent.agent import IndependenceAgent
 from backend.app.agents.research_agent.agent import ResearchAgent
 from backend.app.agents.source_agent.agent import SourceAgent
-from backend.app.agents.verification_agent.agent import VerificationAgent
-from backend.app.agents.verdict_agent.agent import VerdictAgent
 from backend.app.core.logging import get_logger
 from backend.app.workflows.graph import Graph
 
@@ -18,55 +11,23 @@ logger = get_logger(__name__)
 
 
 def build_investigation_workflow() -> Graph:
-    """Build the investigation workflow graph.
+    """claim -> research -> source -> evidence.
 
-    Constructs a directed graph that chains agents in the following order:
-
-    1. ClaimAgent: Extract and normalize claims from input
-    2. ResearchAgent: Search for evidence sources
-    3. SourceAgent: Evaluate source credibility
-    4. EvidenceAgent: Extract evidence from sources
-    5. VerificationAgent: Verify claims against evidence
-    6. ConflictAgent: Detect conflicts between evidence
-    7. IndependenceAgent: Analyze source independence
-    8. VerdictAgent: Generate final verdict
-
-    Returns:
-        Compiled Graph ready for execution
+    The "most likely answer" is derived from the extracted evidence right after this graph
+    finishes (see services/answer_service.py). Verification, conflict detection, independence
+    analysis and the full verdict agent belong to the next phase and are intentionally not wired in.
     """
     graph = Graph()
-
-    # Initialize agents
-    claim_agent = ClaimAgent()
-    research_agent = ResearchAgent(max_iterations=3)
-    source_agent = SourceAgent()
-    evidence_agent = EvidenceAgent()
-    verification_agent = VerificationAgent()
-    conflict_agent = ConflictAgent()
-    independence_agent = IndependenceAgent()
-    verdict_agent = VerdictAgent()
-
-    # Add nodes to graph
-    graph.add_node("claim_extraction", claim_agent.execute)
-    graph.add_node("research", research_agent.execute)
-    graph.add_node("source_evaluation", source_agent.execute)
-    graph.add_node("evidence_extraction", evidence_agent.execute)
-    graph.add_node("verification", verification_agent.execute)
-    graph.add_node("conflict_detection", conflict_agent.execute)
-    graph.add_node("independence_analysis", independence_agent.execute)
-    graph.add_node("verdict_generation", verdict_agent.execute)
-
-    # Add edges connecting nodes in sequence
-    graph.add_edge("claim_extraction", "research")
-    graph.add_edge("research", "source_evaluation")
-    graph.add_edge("source_evaluation", "evidence_extraction")
-    graph.add_edge("evidence_extraction", "verification")
-    graph.add_edge("verification", "conflict_detection")
-    graph.add_edge("conflict_detection", "independence_analysis")
-    graph.add_edge("independence_analysis", "verdict_generation")
-
-    # Set entry point
-    graph.set_entry_point("claim_extraction")
-
-    logger.info("Investigation workflow graph built successfully")
+    steps = [
+        ("claim_extraction", ClaimAgent()),
+        ("research", ResearchAgent(max_iterations=2, queries_per_round=2, results_per_query=5, min_results_per_claim=6)),
+        ("source_evaluation", SourceAgent()),
+        ("evidence_extraction", EvidenceAgent()),
+    ]
+    for name, agent in steps:
+        graph.add_node(name, agent.execute)
+    for (a, _), (b, _) in zip(steps, steps[1:]):
+        graph.add_edge(a, b)
+    graph.set_entry_point(steps[0][0])
+    logger.info("Investigation workflow graph built (claim -> research -> source -> evidence)")
     return graph

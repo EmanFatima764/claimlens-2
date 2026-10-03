@@ -1,5 +1,5 @@
 export type EvidenceType = "supporting" | "contradicting" | "neutral";
-export type VerdictLabel = "true" | "false" | "mixed" | "unverified";
+export type VerdictLabel = "true" | "mostly_true" | "mixed" | "mostly_false" | "false" | "unverified";
 
 export interface SourceRecord {
   id: string;

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ReportData } from "@/types/report";
+import { formatVerdictLabel } from "@/lib/report";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -32,7 +33,7 @@ export default function ReportChat({ report }: { report: ReportData }) {
   }, [messages, loading, open]);
 
   const suggestions = [
-    `Why is this rated "${report.verdict.label}"?`,
+    `Why is this rated "${formatVerdictLabel(report.verdict.label)}"?`,
     "Which source is least reliable?",
     "What is the strongest counter-evidence?",
     "What would change this verdict?",

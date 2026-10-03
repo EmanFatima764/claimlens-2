@@ -2,7 +2,6 @@ from __future__ import annotations
 
 APP_NAME = "ClaimLens 2.0"
 DEFAULT_TIMEOUT_SECONDS = 30
-RESEARCH_MAX_ITERATIONS = 1
 
 STATUS_DRAFT = "draft"
 STATUS_QUEUED = "queued"
@@ -16,22 +15,14 @@ NODE_ORDER = [
     "research",
     "source_evaluation",
     "evidence_extraction",
-    "verification",
-    "conflict_detection",
-    "independence_analysis",
-    "verdict_generation",
 ]
 
-# Maps pipeline nodes to the 4 stages shown in the frontend "verification runway".
+# Maps pipeline nodes to the 4 stages shown in the frontend progress tracker.
 STAGE_GROUPS = {
-    "claim_extraction": "extract",
+    "claim_extraction": "claim",
     "research": "research",
-    "source_evaluation": "research",
-    "evidence_extraction": "verify",
-    "verification": "verify",
-    "conflict_detection": "verify",
-    "independence_analysis": "verify",
-    "verdict_generation": "verdict",
+    "source_evaluation": "sources",
+    "evidence_extraction": "evidence",
     "done": "done",
 }
 

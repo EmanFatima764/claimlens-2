@@ -1,4 +1,4 @@
-export type InvestigationStatus = "draft" | "running" | "completed" | "failed";
+export type InvestigationStatus = "draft" | "queued" | "running" | "completed" | "failed";
 
 export interface InvestigationSummary {
   id: string;
