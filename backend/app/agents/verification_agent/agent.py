@@ -9,6 +9,7 @@ from backend.app.core.exceptions import ClaimLensError
 from backend.app.core.logging import get_logger
 from backend.app.core.utils import clamp01, truncate
 from backend.app.integrations.llm import LLMClient
+from backend.app.repos.verification_repo import VerificationRepository
 
 logger = get_logger(__name__)
 
@@ -88,17 +89,21 @@ class VerificationAgent(BaseAgent):
         self,
         llm: LLMClient | None = None,
         concurrency: int = 2,  # kept low to respect Groq's 2-request semaphore
+        repo: VerificationRepository | None = None,
     ) -> None:
         self.llm = llm or LLMClient()
         self.concurrency = concurrency
+        self.repo = repo or VerificationRepository()
 
     async def run(self, state: dict[str, Any]) -> dict[str, Any]:
         if state.get("llm_degraded"):
             logger.warning("[verification_agent] LLM already degraded — using stance-count fallback for all claims")
-            return {"verified_claims": [
+            results = [
                 self._fallback_for_claim(c, state.get("extracted_evidence", []))
                 for c in state.get("extracted_claims", [])
-            ]}
+            ]
+            await self._persist(state, results)
+            return {"verified_claims": results}
 
         sem = asyncio.Semaphore(self.concurrency)
         results = await asyncio.gather(*[
@@ -110,7 +115,19 @@ class VerificationAgent(BaseAgent):
             len(results),
             {r["claim_id"]: r["verification_status"] for r in results},
         )
-        return {"verified_claims": results}
+        await self._persist(state, list(results))
+        return {"verified_claims": list(results)}
+
+    async def _persist(self, state: dict[str, Any], results: list[dict[str, Any]]) -> None:
+        """Save verified claims to DB (best-effort, never raises)."""
+        investigation_id = state.get("investigation_id")
+        if not investigation_id or not results:
+            return
+        try:
+            await self.repo.save_for_investigation(investigation_id, results)
+            logger.info("[verification_agent] saved %d verified claim(s) to DB", len(results))
+        except Exception as exc:
+            logger.warning("[verification_agent] could not persist verified claims: %s", exc)
 
     # ------------------------------------------------------------------ per-claim
     async def _verify_claim(

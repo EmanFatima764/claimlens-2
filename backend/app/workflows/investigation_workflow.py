@@ -9,6 +9,8 @@ from backend.app.core.logging import get_logger
 from backend.app.repos import (
     ClaimRepository, ConflictRepository, EvidenceRepository, SourceRepository, VerdictRepository,
 )
+from backend.app.repos.independence_repo import IndependenceRepository
+from backend.app.repos.verification_repo import VerificationRepository
 from backend.app.services.answer_service import summarize_evidence
 from backend.app.services.investigation_service import InvestigationService
 from backend.app.workflows.executor import WorkflowExecutor
@@ -35,7 +37,11 @@ class InvestigationWorkflowService:
         )
 
     async def _clear_previous_results(self, investigation_id: str) -> None:
-        for repo in (ClaimRepository(), SourceRepository(), EvidenceRepository(), ConflictRepository(), VerdictRepository()):
+        for repo in (
+            ClaimRepository(), SourceRepository(), EvidenceRepository(),
+            ConflictRepository(), VerdictRepository(),
+            VerificationRepository(), IndependenceRepository(),
+        ):
             await repo.delete_by_investigation(investigation_id)
 
     async def run_workflow(self, investigation_id: str) -> None:

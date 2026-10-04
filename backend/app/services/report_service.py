@@ -8,6 +8,8 @@ from backend.app.integrations.llm import LLMClient
 from backend.app.repos import (
     ClaimRepository, ConflictRepository, EvidenceRepository, SourceRepository, VerdictRepository,
 )
+from backend.app.repos.independence_repo import IndependenceRepository
+from backend.app.repos.verification_repo import VerificationRepository
 from backend.app.schemas.report import ReportRead
 from backend.app.services.investigation_service import InvestigationService
 
@@ -28,16 +30,23 @@ class ReportService:
         self.evidence = EvidenceRepository()
         self.conflicts = ConflictRepository()
         self.verdicts = VerdictRepository()
+        self.verifications = VerificationRepository()
+        self.independence = IndependenceRepository()
 
     async def build_report(self, investigation_id: str) -> ReportRead | None:
         inv = await self.investigations.get_investigation(investigation_id)
         if not inv:
             return None
+
         claims = await self.claims.list(investigation_id=investigation_id)
         sources = await self.sources.list(investigation_id=investigation_id)
         evidence = await self.evidence.list(investigation_id=investigation_id)
         conflicts = await self.conflicts.list(investigation_id=investigation_id)
         verdict_rows = await self.verdicts.list(investigation_id=investigation_id)
+
+        # New: fetch verified_claims and independence_analysis from DB
+        verified_claims = await self.verifications.list_for_investigation(investigation_id)
+        independence_analysis = await self.independence.get_for_investigation(investigation_id)
 
         by_id = {s["id"]: s for s in sources}
         enriched = []
@@ -46,8 +55,14 @@ class ReportService:
             enriched.append({**e, "source_title": src.get("title"), "source_url": src.get("url")})
 
         return ReportRead(
-            investigation=inv, claims=claims, sources=sources, evidence=enriched, conflicts=conflicts,
+            investigation=inv,
+            claims=claims,
+            sources=sources,
+            evidence=enriched,
+            conflicts=conflicts,
             verdict=verdict_rows[0] if verdict_rows else None,
+            verified_claims=verified_claims,
+            independence_analysis=independence_analysis,
         )
 
     async def chat(self, investigation_id: str, question: str, llm: LLMClient | None = None) -> str | None:
@@ -64,6 +79,25 @@ class ReportService:
             f"VERDICT: {v.label} (confidence {v.confidence}, uncertainty {v.uncertainty}, "
             f"review_required={v.review_required}). {v.explanation}"
         )
+
+        # Include verification statuses in chat context
+        if report.verified_claims:
+            lines.append("CLAIM VERIFICATION:")
+            claim_map = {c.id: c.text for c in report.claims}
+            for vc in report.verified_claims:
+                claim_text = claim_map.get(vc.claim_id or "", vc.claim_id or "?")
+                lines.append(
+                    f"- [{vc.verification_status}] confidence={vc.confidence} | {truncate(claim_text, 80)}: {truncate(vc.reasoning, 200)}"
+                )
+
+        # Include source independence in chat context
+        if report.independence_analysis:
+            ia = report.independence_analysis
+            lines.append(
+                f"SOURCE INDEPENDENCE: {ia.overall_independence} "
+                f"({ia.independent_source_count}/{ia.total_source_count} independent origins). {ia.explanation}"
+            )
+
         lines.append("SOURCES:")
         for s in report.sources:
             lines.append(f"[S{idx[s.id]}] {s.title} ({s.domain}) quality={s.quality_score} type={s.source_type}")

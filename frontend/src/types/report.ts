@@ -1,5 +1,7 @@
 export type EvidenceType = "supporting" | "contradicting" | "neutral";
 export type VerdictLabel = "true" | "mostly_true" | "mixed" | "mostly_false" | "false" | "unverified";
+export type VerificationStatus = "supported" | "partially_supported" | "refuted" | "insufficient_evidence";
+export type IndependenceLevel = "high" | "medium" | "low" | "unknown";
 
 export interface SourceRecord {
   id: string;
@@ -38,6 +40,51 @@ export interface VerdictSummary {
   reviewRequired: boolean;
 }
 
+/** Per-claim result from VerificationAgent */
+export interface VerifiedClaim {
+  id?: string;
+  claimId: string;
+  claimText?: string;         // enriched on the frontend by matching against claims list
+  verificationStatus: VerificationStatus;
+  confidence: number;
+  supportingEvidence: string[];
+  contradictingEvidence: string[];
+  reasoning: string;
+  unresolvedIssues: string[];
+  llmFallback: boolean;
+}
+
+/** One origin group from IndependenceAgent */
+export interface SourceGroup {
+  groupId: number;
+  sourceIds: string[];
+  sourceDomains: string[];
+  originDescription: string;
+  isIndependentOrigin: boolean;
+}
+
+/** Pairwise relationship between two sources */
+export interface SourceRelationship {
+  sourceIdA: string;
+  sourceIdB: string;
+  domainA: string;
+  domainB: string;
+  relationship: string;
+  explanation: string;
+}
+
+/** Full independence analysis from IndependenceAgent */
+export interface IndependenceAnalysis {
+  independentSourceCount: number;
+  totalSourceCount: number;
+  independenceRatio: number;
+  sourceGroups: SourceGroup[];
+  relationships: SourceRelationship[];
+  overallIndependence: IndependenceLevel;
+  explanation: string;
+  llmFallback: boolean;
+}
+
 export interface ReportData {
   id: string;
   title: string;
@@ -48,6 +95,8 @@ export interface ReportData {
   sources: SourceRecord[];
   evidence: EvidenceRecord[];
   conflicts: ConflictRecord[];
+  verifiedClaims: VerifiedClaim[];
+  independenceAnalysis: IndependenceAnalysis | null;
   graph: {
     nodes: Array<{ id: string; label: string; type: string; x: number; y: number }>;
     edges: Array<{ source: string; target: string; label: string }>;

@@ -5,6 +5,8 @@ import EvidenceCard from "@/components/report/EvidenceCard";
 import SourceList from "@/components/report/SourceList";
 import ConflictList from "@/components/report/ConflictList";
 import ReportChat from "@/components/report/ReportChat";
+import VerificationStatus from "@/components/report/VerificationStatus";
+import SourceIndependence from "@/components/report/SourceIndependence";
 
 // Always render with fresh data from the backend.
 export const dynamic = "force-dynamic";
@@ -84,6 +86,10 @@ export default async function ReportPage({ params }: { params: Params | Promise<
               />
             ))}
           </div>
+
+          {/* Verification Agent results */}
+          <h3 style={{ margin: "1.5rem 0 12px" }}>Claim Verification</h3>
+          <VerificationStatus verifiedClaims={report.verifiedClaims} />
         </section>
 
         <aside className="evidence-stack" style={{ gap: "1.5rem" }}>
@@ -94,6 +100,11 @@ export default async function ReportPage({ params }: { params: Params | Promise<
           <div>
             <h3 style={{ margin: "0 0 12px" }}>Sources</h3>
             <SourceList sources={report.sources} />
+          </div>
+          {/* Independence Agent results */}
+          <div>
+            <h3 style={{ margin: "0 0 12px" }}>Source Independence</h3>
+            <SourceIndependence analysis={report.independenceAnalysis} />
           </div>
         </aside>
       </div>

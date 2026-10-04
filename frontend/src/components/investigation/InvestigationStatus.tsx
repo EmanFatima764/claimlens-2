@@ -13,12 +13,14 @@ const POLL_MS = 2000;
 const MAX_CONSECUTIVE_ERRORS = 5;
 
 const STAGES: Array<{ key: Exclude<StageGroup, "done">; title: string; hint: string }> = [
-  { key: "claim", title: "Claim", hint: "Extract the claim" },
-  { key: "research", title: "Research", hint: "Search the web" },
-  { key: "sources", title: "Sources", hint: "Score credibility" },
-  { key: "evidence", title: "Evidence", hint: "Read what sources say" },
-  { key: "conflicts", title: "Conflicts", hint: "Spot contradictions" },
-  { key: "verdict", title: "Verdict", hint: "Weigh it all up" },
+  { key: "claim",          title: "Claim",          hint: "Extract the claim" },
+  { key: "research",       title: "Research",       hint: "Search the web" },
+  { key: "sources",        title: "Sources",        hint: "Score credibility" },
+  { key: "evidence",       title: "Evidence",       hint: "Read what sources say" },
+  { key: "verification",   title: "Verification",   hint: "Verify each claim" },
+  { key: "conflicts",      title: "Conflicts",      hint: "Spot contradictions" },
+  { key: "independence",   title: "Independence",   hint: "Check source origins" },
+  { key: "verdict",        title: "Verdict",        hint: "Weigh it all up" },
 ];
 
 const STATUS_COLORS: Record<Investigation["status"], string> = {
@@ -129,7 +131,7 @@ export default function InvestigationStatus({ investigationId, onCompleted }: In
               }}
             >
               <div style={{ color: tone, fontSize: 11, fontWeight: 700 }}>
-                {state === "done" ? "✓" : `0${i + 1}`} {state === "active" ? "· working" : ""}
+                {state === "done" ? "✓" : `${String(i + 1).padStart(2, "0")}`} {state === "active" ? "· working" : ""}
               </div>
               <div style={{ color: "#e2e8f0", fontWeight: 700 }}>{stage.title}</div>
               <div style={{ color: "#94a3b8", fontSize: 12 }}>{stage.hint}</div>

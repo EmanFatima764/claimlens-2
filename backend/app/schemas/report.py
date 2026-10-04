@@ -61,6 +61,51 @@ class VerdictOut(_Loose):
     review_required: bool = False
 
 
+class VerifiedClaimOut(BaseModel):
+    """Per-claim result from VerificationAgent — stored in verified_claims table."""
+    id: Optional[str] = None
+    claim_id: Optional[str] = None
+    verification_status: str = "insufficient_evidence"
+    confidence: float = 0.0
+    supporting_evidence: list[str] = Field(default_factory=list)
+    contradicting_evidence: list[str] = Field(default_factory=list)
+    reasoning: str = ""
+    unresolved_issues: list[str] = Field(default_factory=list)
+    llm_fallback: bool = False
+
+
+class SourceGroupOut(BaseModel):
+    """One origin group returned by IndependenceAgent."""
+    group_id: int = 0
+    source_ids: list[str] = Field(default_factory=list)
+    source_domains: list[str] = Field(default_factory=list)
+    origin_description: str = ""
+    is_independent_origin: bool = True
+
+
+class SourceRelationshipOut(BaseModel):
+    """Pairwise source relationship returned by IndependenceAgent."""
+    source_id_a: str = ""
+    source_id_b: str = ""
+    domain_a: str = ""
+    domain_b: str = ""
+    relationship: str = "unclear"
+    explanation: str = ""
+
+
+class IndependenceAnalysisOut(BaseModel):
+    """Full analysis from IndependenceAgent — stored in independence_analysis table."""
+    id: Optional[str] = None
+    independent_source_count: int = 0
+    total_source_count: int = 0
+    independence_ratio: float = 0.0
+    source_groups: list[SourceGroupOut] = Field(default_factory=list)
+    relationships: list[SourceRelationshipOut] = Field(default_factory=list)
+    overall_independence: str = "unknown"  # high | medium | low | unknown
+    explanation: str = ""
+    llm_fallback: bool = False
+
+
 class ReportRead(_Loose):
     investigation: InvestigationRead
     claims: list[ClaimOut] = Field(default_factory=list)
@@ -68,6 +113,9 @@ class ReportRead(_Loose):
     evidence: list[EvidenceOut] = Field(default_factory=list)
     conflicts: list[ConflictOut] = Field(default_factory=list)
     verdict: Optional[VerdictOut] = None
+    # New: from VerificationAgent + IndependenceAgent
+    verified_claims: list[VerifiedClaimOut] = Field(default_factory=list)
+    independence_analysis: Optional[IndependenceAnalysisOut] = None
 
 
 class ChatRequest(BaseModel):

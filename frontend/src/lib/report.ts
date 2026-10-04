@@ -2,8 +2,12 @@ import type {
   ConflictRecord,
   EvidenceRecord,
   EvidenceType,
+  IndependenceAnalysis,
+  IndependenceLevel,
   ReportData,
   SourceRecord,
+  VerificationStatus,
+  VerifiedClaim,
   VerdictLabel,
 } from "@/types/report";
 import { API_BASE_URL } from "@/lib/api";
@@ -134,6 +138,34 @@ export function getMockReport(reportId: string): {
         explanation: "The reported revenue growth is not fully aligned on the definition of revenue base used across sources.",
       },
     ],
+    verifiedClaims: [
+      {
+        claimId: "claim-1",
+        claimText: "The company has 50,000 active users and grew revenue by 180% in the last 12 months.",
+        verificationStatus: "partially_supported",
+        confidence: 0.68,
+        supportingEvidence: ["Company reported 50,000 active users in annual report.", "Industry benchmark data mirrors user base scale."],
+        contradictingEvidence: ["Revenue growth figure remains under-audited across sources."],
+        reasoning: "User count is directly supported by the annual report. Revenue growth is mentioned in trade press but lacks independent corroboration.",
+        unresolvedIssues: ["Exact definition of revenue base differs across sources."],
+        llmFallback: false,
+      },
+    ],
+    independenceAnalysis: {
+      independentSourceCount: 2,
+      totalSourceCount: 3,
+      independenceRatio: 0.67,
+      sourceGroups: [
+        { groupId: 0, sourceIds: ["src-1"], sourceDomains: ["example.com"], originDescription: "Company primary report", isIndependentOrigin: true },
+        { groupId: 1, sourceIds: ["src-2", "src-3"], sourceDomains: ["example.com"], originDescription: "Industry & trade publications citing same data", isIndependentOrigin: false },
+      ],
+      relationships: [
+        { sourceIdA: "src-2", sourceIdB: "src-3", domainA: "example.com", domainB: "example.com", relationship: "derived", explanation: "Trade article draws from the same industry report." },
+      ],
+      overallIndependence: "medium",
+      explanation: "2 independent evidence origins identified out of 3 sources. The trade publication and industry report share the same underlying data.",
+      llmFallback: false,
+    },
     graph: {
       nodes: [
         { id: "claim-1", label: "Claim", type: "claim", x: 120, y: 120 },
@@ -195,10 +227,47 @@ interface ApiReport {
     uncertainty?: number;
     review_required?: boolean;
   } | null;
+  verified_claims: Array<{
+    id?: string;
+    claim_id?: string;
+    verification_status?: string;
+    confidence?: number;
+    supporting_evidence?: string[];
+    contradicting_evidence?: string[];
+    reasoning?: string;
+    unresolved_issues?: string[];
+    llm_fallback?: boolean;
+  }>;
+  independence_analysis: {
+    id?: string;
+    independent_source_count?: number;
+    total_source_count?: number;
+    independence_ratio?: number;
+    source_groups?: Array<{
+      group_id?: number;
+      source_ids?: string[];
+      source_domains?: string[];
+      origin_description?: string;
+      is_independent_origin?: boolean;
+    }>;
+    relationships?: Array<{
+      source_id_a?: string;
+      source_id_b?: string;
+      domain_a?: string;
+      domain_b?: string;
+      relationship?: string;
+      explanation?: string;
+    }>;
+    overall_independence?: string;
+    explanation?: string;
+    llm_fallback?: boolean;
+  } | null;
 }
 
 const num = (v: unknown, fallback = 0) => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
 const VERDICT_LABELS: VerdictLabel[] = ["true", "mostly_true", "mixed", "mostly_false", "false", "unverified"];
+const VERIFICATION_STATUSES: VerificationStatus[] = ["supported", "partially_supported", "refuted", "insufficient_evidence"];
+const INDEPENDENCE_LEVELS: IndependenceLevel[] = ["high", "medium", "low", "unknown"];
 
 export function formatVerdictLabel(label: string): string {
   return label.replace(/_/g, " ");
@@ -219,6 +288,7 @@ export async function getReport(id: string): Promise<ReportData | null> {
  */
 export function adaptReport(api: ApiReport): ReportData {
   const claimIds = new Map(api.claims.map((c, i) => [c.id, `claim-${i + 1}`]));
+  const claimTexts = new Map(api.claims.map((c) => [c.id, c.text]));
   const srcIds = new Map(api.sources.map((s, i) => [s.id, `src-${i + 1}`]));
   const evIds = new Map(api.evidence.map((e, i) => [e.id, `ev-${i + 1}`]));
 
@@ -251,6 +321,59 @@ export function adaptReport(api: ApiReport): ReportData {
     explanation: c.explanation || "",
   }));
 
+  // Map verified_claims
+  const verifiedClaims: VerifiedClaim[] = (api.verified_claims ?? []).map((vc) => {
+    const rawStatus = vc.verification_status ?? "insufficient_evidence";
+    const status = (VERIFICATION_STATUSES.includes(rawStatus as VerificationStatus)
+      ? rawStatus
+      : "insufficient_evidence") as VerificationStatus;
+    return {
+      id: vc.id,
+      claimId: claimIds.get(vc.claim_id ?? "") ?? vc.claim_id ?? "",
+      claimText: claimTexts.get(vc.claim_id ?? "") ?? "",
+      verificationStatus: status,
+      confidence: num(vc.confidence, 0.5),
+      supportingEvidence: Array.isArray(vc.supporting_evidence) ? vc.supporting_evidence : [],
+      contradictingEvidence: Array.isArray(vc.contradicting_evidence) ? vc.contradicting_evidence : [],
+      reasoning: vc.reasoning ?? "",
+      unresolvedIssues: Array.isArray(vc.unresolved_issues) ? vc.unresolved_issues : [],
+      llmFallback: vc.llm_fallback ?? false,
+    };
+  });
+
+  // Map independence_analysis
+  let independenceAnalysis: IndependenceAnalysis | null = null;
+  if (api.independence_analysis) {
+    const ia = api.independence_analysis;
+    const rawLevel = ia.overall_independence ?? "unknown";
+    const overallIndependence = (INDEPENDENCE_LEVELS.includes(rawLevel as IndependenceLevel)
+      ? rawLevel
+      : "unknown") as IndependenceLevel;
+    independenceAnalysis = {
+      independentSourceCount: num(ia.independent_source_count),
+      totalSourceCount: num(ia.total_source_count),
+      independenceRatio: num(ia.independence_ratio),
+      sourceGroups: (ia.source_groups ?? []).map((g) => ({
+        groupId: g.group_id ?? 0,
+        sourceIds: g.source_ids ?? [],
+        sourceDomains: g.source_domains ?? [],
+        originDescription: g.origin_description ?? "",
+        isIndependentOrigin: g.is_independent_origin ?? true,
+      })),
+      relationships: (ia.relationships ?? []).map((r) => ({
+        sourceIdA: r.source_id_a ?? "",
+        sourceIdB: r.source_id_b ?? "",
+        domainA: r.domain_a ?? "",
+        domainB: r.domain_b ?? "",
+        relationship: r.relationship ?? "unclear",
+        explanation: r.explanation ?? "",
+      })),
+      overallIndependence,
+      explanation: ia.explanation ?? "",
+      llmFallback: ia.llm_fallback ?? false,
+    };
+  }
+
   const v = api.verdict;
   const label = (VERDICT_LABELS.includes(v?.label as VerdictLabel) ? v?.label : "unverified") as VerdictLabel;
   const status = api.investigation.status;
@@ -273,6 +396,8 @@ export function adaptReport(api: ApiReport): ReportData {
     sources,
     evidence,
     conflicts,
+    verifiedClaims,
+    independenceAnalysis,
     graph: buildGraph(api, claimIds, srcIds, evIds),
   };
 }

@@ -8,6 +8,7 @@ from backend.app.agents.base import BaseAgent
 from backend.app.core.exceptions import ClaimLensError
 from backend.app.core.logging import get_logger
 from backend.app.core.utils import clamp01, truncate
+from backend.app.repos.independence_repo import IndependenceRepository
 
 logger = get_logger(__name__)
 
@@ -122,21 +123,26 @@ class IndependenceAgent(BaseAgent):
 
     name = "independence_agent"
 
-    def __init__(self, llm: Any | None = None) -> None:
+    def __init__(self, llm: Any | None = None, repo: IndependenceRepository | None = None) -> None:
         # Import here to avoid a circular import; IndependenceAgent is the only place that needs LLMClient.
         from backend.app.integrations.llm import LLMClient  # noqa: PLC0415
 
         self.llm: Any = llm or LLMClient()
+        self.repo = repo or IndependenceRepository()
 
     async def run(self, state: dict[str, Any]) -> dict[str, Any]:
         sources = state.get("evaluated_sources", [])
         if not sources:
             logger.warning("[independence_agent] no sources available — returning empty analysis")
-            return {"independence_analysis": self._empty_analysis()}
+            result = self._empty_analysis()
+            await self._persist(state, result)
+            return {"independence_analysis": result}
 
         if state.get("llm_degraded"):
             logger.warning("[independence_agent] LLM already degraded — using domain-heuristic fallback")
-            return {"independence_analysis": self._domain_fallback(sources)}
+            result = self._domain_fallback(sources)
+            await self._persist(state, result)
+            return {"independence_analysis": result}
 
         # Work on the most relevant sources so the prompt stays within token limits.
         working = self._select_sources(sources)
@@ -155,12 +161,26 @@ class IndependenceAgent(BaseAgent):
                 analysis["total_source_count"],
                 analysis["overall_independence"],
             )
+            await self._persist(state, analysis)
             return {"independence_analysis": analysis}
         except ClaimLensError as exc:
             logger.warning(
                 "[independence_agent] LLM call failed (%s) — using domain-heuristic fallback", exc.message
             )
-            return {"independence_analysis": self._domain_fallback(sources)}
+            result = self._domain_fallback(sources)
+            await self._persist(state, result)
+            return {"independence_analysis": result}
+
+    async def _persist(self, state: dict[str, Any], analysis: dict[str, Any]) -> None:
+        """Save independence analysis to DB (best-effort, never raises)."""
+        investigation_id = state.get("investigation_id")
+        if not investigation_id:
+            return
+        try:
+            await self.repo.save_for_investigation(investigation_id, analysis)
+            logger.info("[independence_agent] saved independence analysis to DB")
+        except Exception as exc:
+            logger.warning("[independence_agent] could not persist independence analysis: %s", exc)
 
     # ------------------------------------------------------------------ source selection
     @staticmethod
