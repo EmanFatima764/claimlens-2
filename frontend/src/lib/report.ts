@@ -33,27 +33,7 @@ export function getSourceBadgeTone(score: number): string {
   return "#ef4444";
 }
 
-export function getMockReport(reportId: string): {
-  id: string;
-  title: string;
-  status: "completed";
-  claimText: string;
-  summary: string;
-  verdict: {
-    label: "mixed";
-    confidence: number;
-    uncertainty: number;
-    explanation: string;
-    reviewRequired: boolean;
-  };
-  sources: SourceRecord[];
-  evidence: EvidenceRecord[];
-  conflicts: Array<{ id: string; evidenceAId: string; evidenceBId: string; type: string; severity: number; explanation: string }>;
-  graph: {
-    nodes: Array<{ id: string; label: string; type: string; x: number; y: number }>;
-    edges: Array<{ source: string; target: string; label: string }>;
-  };
-} {
+export function getMockReport(reportId: string): ReportData {
   return {
     id: reportId,
     title: "Startup traction claim verification",
