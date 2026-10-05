@@ -14,7 +14,7 @@
 
 <br/>
 
-<img src="docs/screenshots/01-landing.png" alt="ClaimLens landing page" width="900"/>
+<img src="images/01-landing.png" alt="ClaimLens landing page" width="900"/>
 
 </div>
 
@@ -46,11 +46,11 @@ No black box. Every answer shows its homework.
 <table>
 <tr>
 <td width="50%">
-<img src="docs/screenshots/03-check-a-claim.png" alt="Check a claim"/>
+<img src="images/03-check-a-claim.png" alt="Check a claim"/>
 <p align="center"><sub><b>Check a claim</b>: drop in any statement and hit go</sub></p>
 </td>
 <td width="50%">
-<img src="docs/screenshots/04-agents-running.png" alt="Agents running"/>
+<img src="images/04-agents-running.png" alt="Agents running"/>
 <p align="center"><sub><b>Live progress</b>: follow all 8 agents as they work</sub></p>
 </td>
 </tr>
@@ -58,18 +58,18 @@ No black box. Every answer shows its homework.
 
 ### Get a verdict you can defend
 
-<img src="docs/screenshots/05-report-verdict.png" alt="Report with FALSE verdict" width="900"/>
+<img src="images/05-report-verdict.png" alt="Report with FALSE verdict" width="900"/>
 
 <p align="center"><sub>A <b>FALSE</b> verdict with 90% confidence, backed by White House and Pakistani government sources</sub></p>
 
 <table>
 <tr>
 <td width="50%">
-<img src="docs/screenshots/06-claim-verification.png" alt="Claim verification breakdown"/>
+<img src="images/06-claim-verification.png" alt="Claim verification breakdown"/>
 <p align="center"><sub><b>Claim verification</b>: per-claim confidence and the exact evidence behind it</sub></p>
 </td>
 <td width="50%">
-<img src="docs/screenshots/08-mixed-verdict.png" alt="Mixed verdict with conflict"/>
+<img src="images/08-mixed-verdict.png" alt="Mixed verdict with conflict"/>
 <p align="center"><sub><b>Not everything is black and white</b>: a MIXED verdict with a flagged conflict and a human-review warning</sub></p>
 </td>
 </tr>
@@ -77,13 +77,13 @@ No black box. Every answer shows its homework.
 
 ### Ask the report anything
 
-<img src="docs/screenshots/07-ask-claimlens.png" alt="Ask ClaimLens chat" width="900"/>
+<img src="images/07-ask-claimlens.png" alt="Ask ClaimLens chat" width="900"/>
 
 <p align="center"><sub><b>Ask ClaimLens</b> answers only from the evidence in the current report, so it can't wander off and make things up</sub></p>
 
 ### Make it yours
 
-<img src="docs/screenshots/02-themes.png" alt="Theme switcher" width="900"/>
+<img src="images/02-themes.png" alt="Theme switcher" width="900"/>
 
 <p align="center"><sub>Pick your vibe: <b>Aurora</b> (electric blue), <b>Ember</b> (coral) or <b>Verdant</b> (mint)</sub></p>
 
@@ -272,7 +272,7 @@ claimlens-2/
 │       ├── components/      # investigation + report UI
 │       ├── lib/             # API clients
 │       └── types/
-├── docs/screenshots/
+├── images/
 ├── docker-compose.yml
 └── README.md
 ```
@@ -339,7 +339,9 @@ cd frontend && npm run test
 </a>
 </td>
 <td align="center">
+<a href="https://github.com/Ghunain43">
 <b>Ghunain Fayaz</b>
+</a>
 </td>
 </tr>
 </table>
