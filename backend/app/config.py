@@ -36,7 +36,7 @@ class Settings(BaseModel):
     cors_origins: List[str] = Field(
         default_factory=lambda: [
             o.strip()
-            for o in _env("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
+            for o in _env("CORS_ORIGINS", "http://localhost:3000,claimlens2.netlify.app").split(",")
             if o.strip()
         ]
     )
